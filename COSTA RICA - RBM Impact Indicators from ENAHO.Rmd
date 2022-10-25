@@ -1,0 +1,393 @@
+---
+title: "Impact Indicators from ENAHO"
+subtitle: "RBM 2022 Baselines"
+author: "Bruno Carayon"
+institute: "IM Officer Costa Rica"
+date: "`r format(Sys.Date(),  '%d %B %Y')`"
+output:
+  unhcrdown::html_slides:
+    self_contained: true
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+      ratio: "16:9"
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE,
+  fig.showtext = TRUE
+)
+library(tidyverse)
+library(unhcrthemes)
+library(fontawesome)
+library(haven)
+
+ENAHO_2021_usuarios_ <- read_sav("data-raw/ENAHO 2021 usuarios .sav")
+
+```
+
+# Impact Area 2 - Realizing Basic Rights in Safe Environment
+
+
+```{r impact_area2, echo=FALSE, fig.align='center',out.width="500px", dpi=700}
+
+# Total population
+
+total_nic <- ENAHO_2021_usuarios_%>%
+  filter(LugNac == 2)
+
+
+
+total_crc <- ENAHO_2021_usuarios_%>%
+  filter(LugNac == 0 | LugNac == 1)
+
+
+# 2.1 Proportion of PoC living below the national poverty line. [GCR 2.1.1 and SDG 1.2.1]
+
+poverty_nic <- ENAHO_2021_usuarios_%>%
+  filter( LugNac == 2, np == 1 | np== 2)%>%
+  count(.,LugNac)
+
+poverty_crc <- ENAHO_2021_usuarios_%>%
+  filter(LugNac == 0 | LugNac == 1, np == 1 | np== 2)%>%
+  count(.,LugNac)
+
+ind_21_nic <- poverty_nic$n/count(total_nic) 
+ind_21_crc <- poverty_crc$n/count(total_crc)
+
+#2.2 Proportion of PoCs residing in physically safe and secure settlements with access to basic facilities
+## Considering: Access to water(V13A) + Electricity(V15) + Hygiene(V14A) + Clean fuels(V16)  = Person has access to basic services
+
+access_nic <-ENAHO_2021_usuarios_%>%
+  filter( LugNac == 2)%>%
+  select(c(ID_HOGAR,REGION,ZONA,TamHog,LugNac,V12,V13A,V14A,V15,V16))%>%
+  mutate(.,drinking_water= 
+           if_else(V12 == 5 | V12 == 6 | V12 == 7, "No","Yes"))%>%
+  mutate(.,sanitation = if_else(V13A == 0, "No","Yes"))%>%
+  mutate(.,hygiene = if_else(V14A == 0, "No", "Yes"))%>%
+  mutate(.,electricity = if_else(V15 == 0, "No", "Yes"))%>%
+  mutate(.,clean_fuels = if_else(V16 == 0 | V16 == 3 | V16 == 4,"No","Yes"))%>%
+  mutate(.,access2_all_BS=ifelse(drinking_water == "Yes" &
+                                      sanitation == "Yes" & 
+                                     hygiene == "Yes" &
+                                     electricity == "Yes" &
+                                     clean_fuels == "Yes"
+                                     , 1, 0))
+
+access_crc <-ENAHO_2021_usuarios_%>%
+  filter( LugNac == 0 | LugNac == 1)%>%
+  select(c(ID_HOGAR,REGION,ZONA,TamHog,LugNac,V12,V13A,V14A,V15,V16))%>%
+  mutate(.,drinking_water= 
+           if_else(V12 == 5 | V12 == 6 | V12 == 7, "No","Yes"))%>%
+  mutate(.,sanitation = if_else(V13A == 0, "No","Yes"))%>%
+  mutate(.,hygiene = if_else(V14A == 0, "No", "Yes"))%>%
+  mutate(.,electricity = if_else(V15 == 0, "No", "Yes"))%>%
+  mutate(.,clean_fuels = if_else(V16 == 0 | V16 == 3 | V16 == 4,"No","Yes"))%>%
+  mutate(.,access2_all_BS=ifelse(drinking_water == "Yes" &
+                                      sanitation == "Yes" & 
+                                     hygiene == "Yes" &
+                                     electricity == "Yes" &
+                                     clean_fuels == "Yes"
+                                     , 1, 0))
+
+ind_22_nic <- (sum(access_nic$access2_all_BS)/count(total_nic))
+ind_22_crc <- (sum(access_crc$access2_all_BS)/count(total_crc))
+
+#2.3 Proportion of PoC with access to health services
+
+health_nic <-ENAHO_2021_usuarios_%>%
+  filter( LugNac == 2)%>%
+  select(c(ID_HOGAR,REGION,ZONA,TamHog,LugNac,A11))%>%
+filter(A11 == 0)
+
+health_crc <-ENAHO_2021_usuarios_%>%
+  filter( LugNac == 2)%>%
+  select(c(ID_HOGAR,REGION,ZONA,TamHog,LugNac,A11))%>%
+filter(A11 == 0)
+
+ind_23_nic <- (1-(count(health_nic)/count(total_nic)))
+ind_23_crc <- (1-(count(health_crc)/count(total_crc)))
+
+##and now the graph
+
+pop <- c("Costa Ricans", "Nicaraguans","Costa Ricans", "Nicaraguans","Costa Ricans", "Nicaraguans" )
+ind <- c("rbm2.1","rbm2.1","rbm2.2","rbm2.2","rbm2.3","rbm2.3")
+est <- c(ind_21_crc,ind_21_nic,ind_22_crc,ind_22_nic,ind_23_crc,ind_23_nic)
+
+indicators <- tibble(pop,ind,est)%>%
+  mutate(ind = as.factor(ind), pop = as.factor(pop),
+         est = as.numeric(est))
+
+
+rbm_indicators <- 
+  c(rbm2.1 = "2.1 Proportion of PoC living below the national poverty line",
+    rbm2.2 = "2.2 Proportion of PoCs residing in physically safe and secure settlements with access to basic facilities.",
+    rbm2.3 = "2.3 Proportion of PoC with access to health services")
+  
+ggplot(data=indicators, 
+       aes( x = est,
+            y = fct_rev(ind), color = pop))+
+  geom_point()+
+  geom_text(aes(label= scales::label_percent(.1)(est)),
+            vjust= ifelse((indicators$pop == "Nicaraguans"),-1.25, 2))+
+  scale_x_continuous(labels= scales::label_percent(),
+                     limits = c(0,1),
+                     breaks = c(0,.5,1))+
+  scale_color_manual(values = c(CostaRicans = "black",
+                                Nicaraguans = "#0072BC"))+
+  scale_y_discrete(labels = str_wrap(rev(rbm_indicators), 40))+
+  labs(x = "Estimate", y = "",
+       title = "Impact Area 2:",
+       subtitle = " Realizing Rights in Safe Environments",
+       caption = glue::glue("Encuesta Nacional de Hogares (ENAHO) 2021\n",
+                            "# of Nicaraguans = 2,229)")) +
+  unhcRstyle::unhcr_theme() +
+  theme(panel.grid.minor.x = element_blank())
+
+```
+
+
+
+---
+#Impact Area 3 - Empowering Communities and Achieving Gender Equality
+
+```{r impact-area3, echo=FALSE, fig.align='center', out.width="500px", dpi=700}
+
+# Primary education enrollment
+## Nicaraguans
+
+nic_primary_age <- ENAHO_2021_usuarios_%>%
+  filter(LugNac == 2, A5 == 6 | A5== 7 | A5 == 8 
+         | A5 == 9 | A5 == 10 | A5 == 11)%>%
+  select(LugNac,A5,A13)%>%
+  count()
+
+ 
+
+nic_primary_enrolled <- ENAHO_2021_usuarios_%>%
+  filter(LugNac == 2, A5 == 6 | A5== 7 | A5 == 8 
+         | A5 == 9 | A5 == 10 | A5 == 11)%>%
+  select(LugNac,A5,A13)%>%
+  filter(.,A13 == 3)%>%
+  count()
+
+ind32a_nic <- (nic_primary_enrolled/nic_primary_age)
+
+## CostaRicans
+
+crc_primary_age <- ENAHO_2021_usuarios_%>%
+  filter(LugNac == 0 | LugNac == 1, A5 == 6 | A5== 7 | A5 == 8 
+         | A5 == 9 | A5 == 10 | A5 == 11)%>%
+  select(LugNac,A5,A13)%>%
+  count()
+ 
+crc_primary_enrolled <- ENAHO_2021_usuarios_%>%
+  filter(LugNac == 0 | LugNac == 1, A5 == 6 | A5== 7 | A5 == 8 
+         | A5 == 9 | A5 == 10 | A5 == 11)%>%
+  select(LugNac,A5,A13)%>%
+  filter(.,A13 ==3)%>%
+  count()
+
+
+ind32a_crc <- (crc_primary_enrolled/crc_primary_age)
+
+# Secundary education enrollment
+## Nicaraguans
+
+
+nic_secundary_age <- ENAHO_2021_usuarios_%>%
+  filter(LugNac == 2, A5 == 12 | A5== 13 | A5 == 14 
+         | A5 == 15 | A5 == 16 | A5 == 17)%>%
+  select(LugNac,A5,A13)%>%
+  count()
+
+
+
+nic_secundary_enrolled <- ENAHO_2021_usuarios_%>%
+  filter(LugNac == 2, A5 == 12 | A5== 13 | A5 == 14 
+         | A5 == 15 | A5 == 16 | A5 == 17)%>%
+  select(LugNac,A5,A13)%>%
+  filter(.,A13 == 4)%>%
+  count()
+
+ind32b_nic <- (nic_secundary_enrolled/nic_secundary_age)
+
+## CostaRicans
+
+
+
+crc_secundary_age <- ENAHO_2021_usuarios_%>%
+  filter(LugNac == 0 | LugNac == 1, A5 == 12 | A5== 13 | A5 == 14 
+         | A5 == 15 | A5 == 16 | A5 == 17)%>%
+  select(LugNac,A5,A13)%>%
+  count()
+
+
+
+crc_secundary_enrolled <- ENAHO_2021_usuarios_%>%
+  filter(LugNac == 0 | LugNac == 1, A5 == 12 | A5== 13 | A5 == 14 
+         | A5 == 15 | A5 == 16 | A5 == 17)%>%
+  select(LugNac,A5,A13)%>%
+  filter(.,A13 == 4)%>%
+  count()
+
+ind32b_crc <- (crc_secundary_enrolled/crc_secundary_age)
+
+# and now the graph
+
+pop2 <- c("Costa Ricans", "Nicaraguans","Costa Ricans", "Nicaraguans")
+ind2 <- c("rbm3.2a","rbm3.2a","rbm3.2b","rbm3.2b")
+est2 <- c(ind32a_crc,ind32a_nic,ind32b_crc,ind32b_nic)
+
+indicators2 <- tibble(pop2,ind2,est2)%>%
+  mutate(ind2 = as.factor(ind2), pop2 = as.factor(pop2),
+         est2 = as.numeric(est2))
+
+
+rbm_indicators2 <- 
+  c(rbm3.1a = "3.2a Proportion of PoC enrolled in primary education",
+    rbm3.1b = "3.2b Proportion of PoC enrolled in secondary education")
+
+ggplot(data=indicators2, 
+       aes( x = est2,
+            y = fct_rev(ind2), color = pop2))+
+  geom_point()+
+  geom_text(aes(label= scales::label_percent(.1)(est2)),
+            vjust= ifelse((indicators2$pop2 == "Nicaraguans"),-1.25, 2))+
+  scale_x_continuous(labels= scales::label_percent(),
+                     limits = c(0,1),
+                     breaks = c(0,.5,1))+
+  scale_color_manual(values = c(CostaRicans = "black",
+                                Nicaraguans = "#0072BC"))+
+  scale_y_discrete(labels = str_wrap(rev(rbm_indicators2), 40))+
+  labs(x = "Estimate", y = "",
+       title = "Impact Area 3:",
+       subtitle = "Empowering Communities and Achieving Gender Equality",
+       caption = glue::glue("Encuesta Nacional de Hogares (ENAHO) 2021\n",
+                            "# of Nicaraguans = 2,229)")) +
+  unhcRstyle::unhcr_theme() +
+  theme(panel.grid.minor.x = element_blank())
+
+```
+
+---
+# Outcome Indicators
+
+```{r outcome-indicators, echo= FALSE, fig.align='center',  out.width="500px", dpi=700}
+
+
+# 8.2 Proportion of PoC with primary reliance on clean (cooking) fuels and technology [SDG 7.1.2 Tier 1]
+
+# Nicaraguans
+
+nic_clean_fuels <- ENAHO_2021_usuarios_%>%
+  select(.,c(ID_HOGAR,REGION,ZONA,TamHog,LugNac,V16))%>%
+  mutate(.,clean_fuels = if_else(V16 == 0 | V16 == 3 | V16 == 4,0,1))%>%
+  filter(.,LugNac == 2)
+  
+ind81_nic <- (sum(nic_clean_fuels$clean_fuels))/count(total_nic)
+
+# CostaRicans
+
+crc_clean_fuels <- ENAHO_2021_usuarios_%>%
+  select(.,c(ID_HOGAR,REGION,ZONA,TamHog,LugNac,V16))%>%
+  mutate(.,clean_fuels = if_else(V16 == 0 | V16 == 3 | V16 == 4,0,1))%>%
+  filter(.,LugNac == 0 | LugNac == 1)
+  
+ind81_crc <- (sum(crc_clean_fuels$clean_fuels))/count(total_crc)
+
+# 13.3 Proportion of PoC (working age) who are unemployed.
+
+#Nicaraguans
+
+nic_unemployed <-ENAHO_2021_usuarios_%>%
+  filter( LugNac == 2)%>%
+  select(c(ID_HOGAR,REGION,ZONA,TamHog,LugNac,A5,B6,B7A,B7B,B7C,B7D,B7E,
+           B7F,B7G,B7H,B7I,B7J,B7K,B8))%>%
+  filter(A5>17 & A5<66,(B6==8 | B6==9) & (B7A==1 | B7B == 2 | B7C == 3 | B7D == 4 
+                                  | B7E == 5 | B7F == 6 | B7G == 7 | B7H == 8 |
+                                    B7I == 9 | B7J == 10 | B7K == 11 | B8 == 1))
+
+
+nic_work_force <-ENAHO_2021_usuarios_%>%
+  filter( LugNac == 2)%>%
+  select(c(ID_HOGAR,REGION,ZONA,TamHog,LugNac,A5,B6,B7A,B7B,B7C,B7D,B7E,
+           B7F,B7G,B7H,B7I,B7J,B7K,B8))%>%
+  filter(A5>17 & A5<66,(B6==1  | B6==2 | B6==3| B6==4| B6==5| B6==6 | B6==7) 
+         | ((B6==8 | B6 == 9) & (B8 == 4 | B8 == 5| B8 == 6| B8 == 7
+                                 | B8 == 8| B8 == 9| B8 == 10| B8 == 11
+                                 | B8 == 12| B8 == 13| B8 == 14| B8 == 15)))
+  
+ind133_nic <- (count(nic_unemployed)/count(nic_work_force))
+
+
+#Costaricans
+
+crc_unemployed <-ENAHO_2021_usuarios_%>%
+  filter( LugNac == 0 | LugNac == 1)%>%
+  select(c(ID_HOGAR,REGION,ZONA,TamHog,LugNac,A5,B6,B7A,B7B,B7C,B7D,B7E,
+           B7F,B7G,B7H,B7I,B7J,B7K,B8))%>%
+  filter(A5>17 & A5<66,(B6==8 | B6==9) & (B7A==1 | B7B == 2 | B7C == 3 | B7D == 4 
+                                  | B7E == 5 | B7F == 6 | B7G == 7 | B7H == 8 |
+                                    B7I == 9 | B7J == 10 | B7K == 11 | B8 == 1))
+
+
+crc_work_force <-ENAHO_2021_usuarios_%>%
+  filter( LugNac == 0 | LugNac == 1)%>%
+  select(c(ID_HOGAR,REGION,ZONA,TamHog,LugNac,A5,B6,B7A,B7B,B7C,B7D,B7E,
+           B7F,B7G,B7H,B7I,B7J,B7K,B8))%>%
+  filter(A5>17 & A5<66,(B6==1  | B6==2 | B6==3| B6==4| B6==5| B6==6 | B6==7) 
+         | ((B6==8 | B6 == 9) & (B8 == 4 | B8 == 5| B8 == 6| B8 == 7
+                                 | B8 == 8| B8 == 9| B8 == 10| B8 == 11
+                                 | B8 == 12| B8 == 13| B8 == 14| B8 == 15)))
+  
+ind133_crc <- (count(crc_unemployed)/count(crc_work_force))
+
+# and now the graph
+
+pop3 <- c("Costa Ricans", "Nicaraguans","Costa Ricans", "Nicaraguans")
+ind3 <- c("rbm8.1","rbm8.1","rbm13.3","rbm13.3")
+est3 <- c(ind81_crc,ind81_nic,ind133_crc,ind133_nic)
+
+indicators3 <- tibble(pop3,ind3,est3)%>%
+  mutate(ind3 = as.factor(ind3), pop3 = as.factor(pop3),
+         est3 = as.numeric(est3))
+
+
+rbm_indicators3 <- 
+  c(rbm8.1 = "8.2 Proportion of PoC with primary reliance on clean (cooking) fuels and technology [SDG 7.1.2 Tier 1]",
+    rbm13.3= "13.3 Proportion of PoC (working age) who are unemployed.")
+
+ggplot(data=indicators3, 
+       aes( x = est3,
+            y = ind3, color = pop3))+
+  geom_point()+
+  geom_text(aes(label= scales::label_percent(.1)(est3)),
+            vjust= ifelse((indicators3$pop3 == "Nicaraguans"),-1.25, 2))+
+  scale_x_continuous(labels= scales::label_percent(),
+                     limits = c(0,1),
+                     breaks = c(0,.5,1))+
+  scale_color_manual(values = c(CostaRicans = "black",
+                                Nicaraguans = "#0072BC"))+
+  scale_y_discrete(labels = str_wrap(rev(rbm_indicators3), 40))+
+  labs(x = "Estimate", y = "",
+       title = "Outcome Indicators:",
+       caption = glue::glue("Encuesta Nacional de Hogares (ENAHO) 2021\n",
+                            "# of Nicaraguans = 2,229)")) +
+  unhcRstyle::unhcr_theme() +
+  theme(panel.grid.minor.x = element_blank())
+
+```
+
+
+
+
+---
+
+class: center, middle
+
+#THANK YOU
