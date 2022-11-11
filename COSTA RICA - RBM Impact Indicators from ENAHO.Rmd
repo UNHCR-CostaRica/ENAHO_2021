@@ -38,33 +38,38 @@ ENAHO_2021_usuarios_ <- read_sav("data-raw/ENAHO 2021 usuarios .sav")
 # Total population
 
 total_nic <- ENAHO_2021_usuarios_%>%
-  filter(LugNac == 2)
+  filter(LugNac == 2)%>%
+  count(.,wt=FACTOR)
 
 
 
 total_crc <- ENAHO_2021_usuarios_%>%
-  filter(LugNac == 0 | LugNac == 1)
+  filter(LugNac == 0 | LugNac == 1)%>%
+  count(.,wt=FACTOR)
 
 
 # 2.1 Proportion of PoC living below the national poverty line. [GCR 2.1.1 and SDG 1.2.1]
 
 poverty_nic <- ENAHO_2021_usuarios_%>%
   filter( LugNac == 2, np == 1 | np== 2)%>%
-  count(.,LugNac)
+  count(.,wt=FACTOR)
+
+
+
 
 poverty_crc <- ENAHO_2021_usuarios_%>%
   filter(LugNac == 0 | LugNac == 1, np == 1 | np== 2)%>%
-  count(.,LugNac)
+  count(.,wt=FACTOR)
 
-ind_21_nic <- poverty_nic$n/count(total_nic) 
-ind_21_crc <- poverty_crc$n/count(total_crc)
+ind_21_nic <- poverty_nic$n/total_nic
+ind_21_crc <- poverty_crc$n/total_crc
 
 #2.2 Proportion of PoCs residing in physically safe and secure settlements with access to basic facilities
 ## Considering: Access to water(V13A) + Electricity(V15) + Hygiene(V14A) + Clean fuels(V16)  = Person has access to basic services
 
 access_nic <-ENAHO_2021_usuarios_%>%
   filter( LugNac == 2)%>%
-  select(c(ID_HOGAR,REGION,ZONA,TamHog,LugNac,V12,V13A,V14A,V15,V16))%>%
+  select(c(FACTOR,ID_HOGAR,REGION,ZONA,TamHog,LugNac,V12,V13A,V14A,V15,V16))%>%
   mutate(.,drinking_water= 
            if_else(V12 == 5 | V12 == 6 | V12 == 7, "No","Yes"))%>%
   mutate(.,sanitation = if_else(V13A == 0, "No","Yes"))%>%
@@ -76,11 +81,13 @@ access_nic <-ENAHO_2021_usuarios_%>%
                                      hygiene == "Yes" &
                                      electricity == "Yes" &
                                      clean_fuels == "Yes"
-                                     , 1, 0))
+                                     , 1, 0))%>%
+  filter(.,access2_all_BS==1)%>%
+  count(.,wt=FACTOR)
 
 access_crc <-ENAHO_2021_usuarios_%>%
   filter( LugNac == 0 | LugNac == 1)%>%
-  select(c(ID_HOGAR,REGION,ZONA,TamHog,LugNac,V12,V13A,V14A,V15,V16))%>%
+  select(c(FACTOR,ID_HOGAR,REGION,ZONA,TamHog,LugNac,V12,V13A,V14A,V15,V16))%>%
   mutate(.,drinking_water= 
            if_else(V12 == 5 | V12 == 6 | V12 == 7, "No","Yes"))%>%
   mutate(.,sanitation = if_else(V13A == 0, "No","Yes"))%>%
@@ -92,25 +99,30 @@ access_crc <-ENAHO_2021_usuarios_%>%
                                      hygiene == "Yes" &
                                      electricity == "Yes" &
                                      clean_fuels == "Yes"
-                                     , 1, 0))
+                                     , 1, 0))%>%
+  filter(.,access2_all_BS==1)%>%
+  count(.,wt=FACTOR)
 
-ind_22_nic <- (sum(access_nic$access2_all_BS)/count(total_nic))
-ind_22_crc <- (sum(access_crc$access2_all_BS)/count(total_crc))
+ind_22_nic <- access_nic/total_nic
+ind_22_crc <- access_crc/total_crc
 
 #2.3 Proportion of PoC with access to health services
 
 health_nic <-ENAHO_2021_usuarios_%>%
   filter( LugNac == 2)%>%
-  select(c(ID_HOGAR,REGION,ZONA,TamHog,LugNac,A11))%>%
-filter(A11 == 0)
+  select(c(FACTOR,ID_HOGAR,REGION,ZONA,TamHog,LugNac,A11))%>%
+filter(A11 == 0)%>%
+  count(.,wt=FACTOR)
+  
 
 health_crc <-ENAHO_2021_usuarios_%>%
   filter( LugNac == 2)%>%
-  select(c(ID_HOGAR,REGION,ZONA,TamHog,LugNac,A11))%>%
-filter(A11 == 0)
+  select(c(FACTOR,ID_HOGAR,REGION,ZONA,TamHog,LugNac,A11))%>%
+filter(A11 == 0)%>%
+  count(.,wt=FACTOR)
 
-ind_23_nic <- (1-(count(health_nic)/count(total_nic)))
-ind_23_crc <- (1-(count(health_crc)/count(total_crc)))
+ind_23_nic <- (1-(health_nic/total_nic))
+ind_23_crc <- (1-(health_crc/total_crc))
 
 ##and now the graph
 
@@ -163,17 +175,17 @@ ggplot(data=indicators,
 nic_primary_age <- ENAHO_2021_usuarios_%>%
   filter(LugNac == 2, A5 == 6 | A5== 7 | A5 == 8 
          | A5 == 9 | A5 == 10 | A5 == 11)%>%
-  select(LugNac,A5,A13)%>%
-  count()
+  select(FACTOR,LugNac,A5,A13)%>%
+  count(.,wt=FACTOR)
 
  
 
 nic_primary_enrolled <- ENAHO_2021_usuarios_%>%
   filter(LugNac == 2, A5 == 6 | A5== 7 | A5 == 8 
          | A5 == 9 | A5 == 10 | A5 == 11)%>%
-  select(LugNac,A5,A13)%>%
+  select(FACTOR,LugNac,A5,A13)%>%
   filter(.,A13 == 3)%>%
-  count()
+  count(.,wt=FACTOR)
 
 ind32a_nic <- (nic_primary_enrolled/nic_primary_age)
 
@@ -182,15 +194,15 @@ ind32a_nic <- (nic_primary_enrolled/nic_primary_age)
 crc_primary_age <- ENAHO_2021_usuarios_%>%
   filter(LugNac == 0 | LugNac == 1, A5 == 6 | A5== 7 | A5 == 8 
          | A5 == 9 | A5 == 10 | A5 == 11)%>%
-  select(LugNac,A5,A13)%>%
-  count()
+  select(FACTOR,LugNac,A5,A13)%>%
+  count(.,wt=FACTOR)
  
 crc_primary_enrolled <- ENAHO_2021_usuarios_%>%
   filter(LugNac == 0 | LugNac == 1, A5 == 6 | A5== 7 | A5 == 8 
          | A5 == 9 | A5 == 10 | A5 == 11)%>%
-  select(LugNac,A5,A13)%>%
+  select(FACTOR,LugNac,A5,A13)%>%
   filter(.,A13 ==3)%>%
-  count()
+  count(.,wt=FACTOR)
 
 
 ind32a_crc <- (crc_primary_enrolled/crc_primary_age)
@@ -202,17 +214,17 @@ ind32a_crc <- (crc_primary_enrolled/crc_primary_age)
 nic_secundary_age <- ENAHO_2021_usuarios_%>%
   filter(LugNac == 2, A5 == 12 | A5== 13 | A5 == 14 
          | A5 == 15 | A5 == 16 | A5 == 17)%>%
-  select(LugNac,A5,A13)%>%
-  count()
+  select(FACTOR,LugNac,A5,A13)%>%
+  count(.,wt=FACTOR)
 
 
 
 nic_secundary_enrolled <- ENAHO_2021_usuarios_%>%
   filter(LugNac == 2, A5 == 12 | A5== 13 | A5 == 14 
          | A5 == 15 | A5 == 16 | A5 == 17)%>%
-  select(LugNac,A5,A13)%>%
+  select(FACTOR,LugNac,A5,A13)%>%
   filter(.,A13 == 4)%>%
-  count()
+  count(.,wt=FACTOR)
 
 ind32b_nic <- (nic_secundary_enrolled/nic_secundary_age)
 
@@ -223,17 +235,17 @@ ind32b_nic <- (nic_secundary_enrolled/nic_secundary_age)
 crc_secundary_age <- ENAHO_2021_usuarios_%>%
   filter(LugNac == 0 | LugNac == 1, A5 == 12 | A5== 13 | A5 == 14 
          | A5 == 15 | A5 == 16 | A5 == 17)%>%
-  select(LugNac,A5,A13)%>%
-  count()
+  select(FACTOR,LugNac,A5,A13)%>%
+  count(.,wt=FACTOR)
 
 
 
 crc_secundary_enrolled <- ENAHO_2021_usuarios_%>%
   filter(LugNac == 0 | LugNac == 1, A5 == 12 | A5== 13 | A5 == 14 
          | A5 == 15 | A5 == 16 | A5 == 17)%>%
-  select(LugNac,A5,A13)%>%
+  select(FACTOR,LugNac,A5,A13)%>%
   filter(.,A13 == 4)%>%
-  count()
+  count(.,wt=FACTOR)
 
 ind32b_crc <- (crc_secundary_enrolled/crc_secundary_age)
 
@@ -285,20 +297,22 @@ ggplot(data=indicators2,
 # Nicaraguans
 
 nic_clean_fuels <- ENAHO_2021_usuarios_%>%
-  select(.,c(ID_HOGAR,REGION,ZONA,TamHog,LugNac,V16))%>%
+  select(.,c(FACTOR,ID_HOGAR,REGION,ZONA,TamHog,LugNac,V16))%>%
   mutate(.,clean_fuels = if_else(V16 == 0 | V16 == 3 | V16 == 4,0,1))%>%
-  filter(.,LugNac == 2)
-  
-ind81_nic <- (sum(nic_clean_fuels$clean_fuels))/count(total_nic)
+  filter(.,LugNac == 2, clean_fuels == 1)%>%
+  count(clean_fuels,wt=FACTOR)
+
+ind81_nic <- (nic_clean_fuels$n/total_nic)
 
 # CostaRicans
 
 crc_clean_fuels <- ENAHO_2021_usuarios_%>%
-  select(.,c(ID_HOGAR,REGION,ZONA,TamHog,LugNac,V16))%>%
+  select(.,c(FACTOR,ID_HOGAR,REGION,ZONA,TamHog,LugNac,V16))%>%
   mutate(.,clean_fuels = if_else(V16 == 0 | V16 == 3 | V16 == 4,0,1))%>%
-  filter(.,LugNac == 0 | LugNac == 1)
+  filter(.,LugNac == 0 | LugNac == 1, clean_fuels == 1)%>%
+  count(clean_fuels,wt=FACTOR)
   
-ind81_crc <- (sum(crc_clean_fuels$clean_fuels))/count(total_crc)
+ind81_crc <- crc_clean_fuels$n/total_crc
 
 # 13.3 Proportion of PoC (working age) who are unemployed.
 
@@ -306,52 +320,83 @@ ind81_crc <- (sum(crc_clean_fuels$clean_fuels))/count(total_crc)
 
 nic_unemployed <-ENAHO_2021_usuarios_%>%
   filter( LugNac == 2)%>%
-  select(c(ID_HOGAR,REGION,ZONA,TamHog,LugNac,A5,B6,B7A,B7B,B7C,B7D,B7E,
+  select(c(FACTOR,ID_HOGAR,REGION,ZONA,TamHog,LugNac,A5,B6,B7A,B7B,B7C,B7D,B7E,
            B7F,B7G,B7H,B7I,B7J,B7K,B8))%>%
   filter(A5>17 & A5<66,(B6==8 | B6==9) & (B7A==1 | B7B == 2 | B7C == 3 | B7D == 4 
                                   | B7E == 5 | B7F == 6 | B7G == 7 | B7H == 8 |
-                                    B7I == 9 | B7J == 10 | B7K == 11 | B8 == 1))
+                                    B7I == 9 | B7J == 10 | B7K == 11 | B8 == 1))%>%
+  count(.,wt=FACTOR)
 
 
 nic_work_force <-ENAHO_2021_usuarios_%>%
   filter( LugNac == 2)%>%
-  select(c(ID_HOGAR,REGION,ZONA,TamHog,LugNac,A5,B6,B7A,B7B,B7C,B7D,B7E,
+  select(c(FACTOR,ID_HOGAR,REGION,ZONA,TamHog,LugNac,A5,B6,B7A,B7B,B7C,B7D,B7E,
            B7F,B7G,B7H,B7I,B7J,B7K,B8))%>%
   filter(A5>17 & A5<66,(B6==1  | B6==2 | B6==3| B6==4| B6==5| B6==6 | B6==7) 
          | ((B6==8 | B6 == 9) & (B8 == 4 | B8 == 5| B8 == 6| B8 == 7
                                  | B8 == 8| B8 == 9| B8 == 10| B8 == 11
-                                 | B8 == 12| B8 == 13| B8 == 14| B8 == 15)))
+                                 | B8 == 12| B8 == 13| B8 == 14| B8 == 15)))%>%
+  count(.,wt=FACTOR)
   
-ind133_nic <- (count(nic_unemployed)/count(nic_work_force))
+ind133_nic <- nic_unemployed/nic_work_force
 
 
 #Costaricans
 
 crc_unemployed <-ENAHO_2021_usuarios_%>%
   filter( LugNac == 0 | LugNac == 1)%>%
-  select(c(ID_HOGAR,REGION,ZONA,TamHog,LugNac,A5,B6,B7A,B7B,B7C,B7D,B7E,
+  select(c(FACTOR,ID_HOGAR,REGION,ZONA,TamHog,LugNac,A5,B6,B7A,B7B,B7C,B7D,B7E,
            B7F,B7G,B7H,B7I,B7J,B7K,B8))%>%
   filter(A5>17 & A5<66,(B6==8 | B6==9) & (B7A==1 | B7B == 2 | B7C == 3 | B7D == 4 
                                   | B7E == 5 | B7F == 6 | B7G == 7 | B7H == 8 |
-                                    B7I == 9 | B7J == 10 | B7K == 11 | B8 == 1))
+                                    B7I == 9 | B7J == 10 | B7K == 11 | B8 == 1))%>%
+  count(.,wt=FACTOR)
 
 
 crc_work_force <-ENAHO_2021_usuarios_%>%
   filter( LugNac == 0 | LugNac == 1)%>%
-  select(c(ID_HOGAR,REGION,ZONA,TamHog,LugNac,A5,B6,B7A,B7B,B7C,B7D,B7E,
+  select(c(FACTOR,ID_HOGAR,REGION,ZONA,TamHog,LugNac,A5,B6,B7A,B7B,B7C,B7D,B7E,
            B7F,B7G,B7H,B7I,B7J,B7K,B8))%>%
   filter(A5>17 & A5<66,(B6==1  | B6==2 | B6==3| B6==4| B6==5| B6==6 | B6==7) 
          | ((B6==8 | B6 == 9) & (B8 == 4 | B8 == 5| B8 == 6| B8 == 7
                                  | B8 == 8| B8 == 9| B8 == 10| B8 == 11
-                                 | B8 == 12| B8 == 13| B8 == 14| B8 == 15)))
+                                 | B8 == 12| B8 == 13| B8 == 14| B8 == 15)))%>%
+  count(.,wt=FACTOR)
   
-ind133_crc <- (count(crc_unemployed)/count(crc_work_force))
+ind133_crc <- crc_unemployed/crc_work_force
+
+
+# 16.1. Proportion of PoC with secure tenure rights and/or property rights to housing and/or land [revised SDG indicator 1.4.2]
+
+
+#Nicaraguans
+
+nic_secure_tenure <-ENAHO_2021_usuarios_%>%
+  filter( LugNac == 2)%>%
+  select(c(FACTOR,ID_HOGAR,REGION,ZONA,TamHog,LugNac,V2A))%>%
+  filter( V2A == 1 | V2A == 2 | V2A == 3)%>%
+  count(.,wt=FACTOR)
+
+  
+ind161_nic <- nic_secure_tenure/total_nic
+
+#Costaricains
+
+crc_secure_tenure <-ENAHO_2021_usuarios_%>%
+  filter( LugNac == 0  | LugNac == 1)%>%
+  select(c(FACTOR,ID_HOGAR,REGION,ZONA,TamHog,LugNac,V2A))%>%
+  filter( V2A == 1 | V2A == 2 | V2A == 3)%>%
+  count(.,wt=FACTOR)
+
+  
+ind161_crc <- crc_secure_tenure/total_crc
+
 
 # and now the graph
 
-pop3 <- c("Costa Ricans", "Nicaraguans","Costa Ricans", "Nicaraguans")
-ind3 <- c("rbm8.1","rbm8.1","rbm13.3","rbm13.3")
-est3 <- c(ind81_crc,ind81_nic,ind133_crc,ind133_nic)
+pop3 <- c("Costa Ricans", "Nicaraguans","Costa Ricans", "Nicaraguans","Costa Ricans", "Nicaraguans")
+ind3 <- c("rbm8.1","rbm8.1","rbm13.3","rbm13.3","rbm16.1","rbm16.1")
+est3 <- c(ind81_crc,ind81_nic,ind133_crc,ind133_nic,ind161_crc,ind161_nic)
 
 indicators3 <- tibble(pop3,ind3,est3)%>%
   mutate(ind3 = as.factor(ind3), pop3 = as.factor(pop3),
@@ -360,7 +405,9 @@ indicators3 <- tibble(pop3,ind3,est3)%>%
 
 rbm_indicators3 <- 
   c(rbm8.1 = "8.2 Proportion of PoC with primary reliance on clean (cooking) fuels and technology [SDG 7.1.2 Tier 1]",
-    rbm13.3= "13.3 Proportion of PoC (working age) who are unemployed.")
+     rbm16.1 ="16.1. Proportion of PoC with secure tenure rights and/or property rights to housing and/or land [revised SDG indicator 1.4.2]",
+    rbm13.3= "13.3 Proportion of PoC (working age) who are unemployed."
+   )
 
 ggplot(data=indicators3, 
        aes( x = est3,
