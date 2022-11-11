@@ -1,40 +1,43 @@
 ---
 title: "Impact Indicators from ENAHO"
 subtitle: "RBM 2022 Baselines"
-author: "Bruno Carayon"
-institute: "IM Officer Costa Rica"
+author: "Bruno Carayon, IM Officer Costa Rica"
 date: "`r format(Sys.Date(),  '%d %B %Y')`"
 output:
-  unhcrdown::html_slides:
-    self_contained: true
-    nature:
-      highlightStyle: github
-      highlightLines: true
-      countIncrementalSlides: false
-      ratio: "16:9"
+  unhcrdown::pptx_slides
 ---
 
 ```{r setup, include=FALSE}
-options(htmltools.dir.version = FALSE)
-knitr::opts_chunk$set(
-  warning = FALSE,
-  message = FALSE,
-  fig.showtext = TRUE
-)
+knitr::opts_chunk$set(echo = FALSE, fig.cap = TRUE)
+library(officedown)
 library(tidyverse)
 library(unhcrthemes)
 library(fontawesome)
 library(haven)
+# turn off the automatic use of showtext functionality, so that the dml function can works properly
+showtext::showtext_auto(FALSE) 
 
-ENAHO_2021_usuarios_ <- read_sav("data-raw/ENAHO 2021 usuarios .sav")
+ENAHO_2021_usuarios_ <- read_sav(here::here("data-raw","ENAHO 2021 usuarios .sav"))
 
 ```
+
+---
+
+# Encuesta Nacional de Hogares
+
+La [Encuesta Nacional de Hogares (ENAHO)](https://inec.cr/estadisticas-fuentes/encuestas/encuesta-nacional-hogares) es un programa de recolección de datos cuyo enfoque está asociado al nivel de bienestar de la población, especialmente centrados en la conformación del ingreso de los hogares, su distribución y características de los hogares y la población en situación de pobreza. 
+
+Se contempla además el estudio de la tenencia de vivienda y sus características, el acceso de las personas a la educación y al seguro social, así como la población que trabaja y las condiciones de esos trabajos, entre otros. 
+
+Igualmente, cada año se hacen investigaciones específicas o módulos especiales, dentro de los que se pueden mencionar acceso a programas sociales utilización de servicios de salud, telecomunicaciones, trabajo infantil, migración, seguridad ciudadana, lactancia materna.
+
+--- 
 
 # Impact Area 2 - Realizing Basic Rights in Safe Environment
 
 
-```{r impact_area2, echo=FALSE, fig.align='center',out.width="500px", dpi=700}
 
+```{r layout='Title and Content', ph=officer::ph_location_type(type="body")}
 # Total population
 
 total_nic <- ENAHO_2021_usuarios_%>%
@@ -157,17 +160,24 @@ ggplot(data=indicators,
        subtitle = " Realizing Rights in Safe Environments",
        caption = glue::glue("Encuesta Nacional de Hogares (ENAHO) 2021\n",
                             "# of Nicaraguans = 2,229)")) +
-  unhcRstyle::unhcr_theme() +
-  theme(panel.grid.minor.x = element_blank())
+  unhcrthemes::theme_unhcr(font_size = 15) +
+  theme(panel.grid.minor.x = element_blank()) -> p
+
+
+# turn off the automatic use of showtext functionality, so that the dml function can works properly
+showtext::showtext_auto(FALSE) 
+rvg::dml(ggobj = p, fonts = list(serif = 'Lato'))
 
 ```
 
 
 
----
+--- 
+
 #Impact Area 3 - Empowering Communities and Achieving Gender Equality
 
-```{r impact-area3, echo=FALSE, fig.align='center', out.width="500px", dpi=700}
+
+```{r layout='Title and Content', ph=officer::ph_location_type(type="body")}
 
 # Primary education enrollment
 ## Nicaraguans
@@ -281,15 +291,22 @@ ggplot(data=indicators2,
        subtitle = "Empowering Communities and Achieving Gender Equality",
        caption = glue::glue("Encuesta Nacional de Hogares (ENAHO) 2021\n",
                             "# of Nicaraguans = 2,229)")) +
-  unhcRstyle::unhcr_theme() +
-  theme(panel.grid.minor.x = element_blank())
+  unhcrthemes::theme_unhcr(font_size = 15) +
+  theme(panel.grid.minor.x = element_blank())  -> p
+
+
+# turn off the automatic use of showtext functionality, so that the dml function can works properly
+showtext::showtext_auto(FALSE) 
+rvg::dml(ggobj = p, fonts = list(serif = 'Lato'))
 
 ```
 
----
+--- 
+
 # Outcome Indicators
 
-```{r outcome-indicators, echo= FALSE, fig.align='center',  out.width="500px", dpi=700}
+
+```{r layout='Title and Content', ph=officer::ph_location_type(type="body")}
 
 
 # 8.2 Proportion of PoC with primary reliance on clean (cooking) fuels and technology [SDG 7.1.2 Tier 1]
@@ -425,16 +442,21 @@ ggplot(data=indicators3,
        title = "Outcome Indicators:",
        caption = glue::glue("Encuesta Nacional de Hogares (ENAHO) 2021\n",
                             "# of Nicaraguans = 2,229)")) +
-  unhcRstyle::unhcr_theme() +
-  theme(panel.grid.minor.x = element_blank())
+     unhcrthemes::theme_unhcr(font_size = 15) +
+  theme(panel.grid.minor.x = element_blank())  -> p
+
+
+# turn off the automatic use of showtext functionality, so that the dml function can works properly
+showtext::showtext_auto(FALSE) 
+rvg::dml(ggobj = p, fonts = list(serif = 'Lato'))
 
 ```
 
 
 
-
 ---
 
-class: center, middle
+# Thank you!
 
-#THANK YOU
+
+---
