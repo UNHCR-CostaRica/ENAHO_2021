@@ -21,6 +21,20 @@ ENAHO_2021_usuarios_ <- read_sav(here::here("data-raw","ENAHO 2021 usuarios .sav
 
 ```
 
+
+
+---
+
+# Inclusión estadística
+
+Tal y como promueven las [Recomendaciones Internacionales sobre Estadísticas de Refugiados (IRRS)](https://egrisstats.org/recommendations/international-recommendations-on-refugee-statistics-irrs/) de 2018,las Oficinas Nacionales de Estadística son las mejor posicionadas para producir datos de alta calidad sobre el desplazamiento forzado.
+
+Los indicadores generados a partir de las estadísticas oficiales son particularmente relevantes no solo para informar el diseño de programas humanitarios a corto plazo, sino también la formulación de políticas y la financiación del desarrollo a largo plazo
+
+El ACNUR dispone de un conjunto de indicadores básicos. En Costa Rica, la encuesta nacional de hogares incluye a las personas desplazadas por la fuerza y el ACNUR puede utilizar las estadísticas oficiales para calcular sus propios indicadores
+
+
+
 ---
 
 # Encuesta Nacional de Hogares
@@ -170,11 +184,10 @@ rvg::dml(ggobj = p, fonts = list(serif = 'Lato'))
 
 ```
 
-
-
 --- 
 
-#Impact Area 3 - Empowering Communities and Achieving Gender Equality
+# Impact Area 3 - Empowering Communities and Achieving Gender Equality
+
 
 
 ```{r layout='Title and Content', ph=officer::ph_location_type(type="body")}
@@ -300,6 +313,7 @@ showtext::showtext_auto(FALSE)
 rvg::dml(ggobj = p, fonts = list(serif = 'Lato'))
 
 ```
+
 
 --- 
 
