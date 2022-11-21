@@ -27,11 +27,11 @@ ENAHO_2021_usuarios_ <- read_sav(here::here("data-raw","ENAHO 2021 usuarios .sav
 
 # Inclusión estadística
 
-Tal y como promueven las [Recomendaciones Internacionales sobre Estadísticas de Refugiados (IRRS)](https://egrisstats.org/recommendations/international-recommendations-on-refugee-statistics-irrs/) de 2018,las Oficinas Nacionales de Estadística son las mejor posicionadas para producir datos de alta calidad sobre el desplazamiento forzado.
+Tal y como promueven las [Recomendaciones Internacionales sobre Estadísticas de Refugiados (IRRS)](https://egrisstats.org/recommendations/international-recommendations-on-refugee-statistics-irrs/) de 2018,las Oficinas Nacionales de Estadística son las mejores posicionadas para producir datos de alta calidad sobre el desplazamiento forzado.
 
 Los indicadores generados a partir de las estadísticas oficiales son particularmente relevantes no solo para informar el diseño de programas humanitarios a corto plazo, sino también la formulación de políticas y la financiación del desarrollo a largo plazo
 
-El ACNUR dispone de un conjunto de indicadores básicos. En Costa Rica, la encuesta nacional de hogares incluye a las personas desplazadas por la fuerza y el ACNUR puede utilizar las estadísticas oficiales para calcular sus propios indicadores
+El ACNUR dispone de un conjunto de indicadores básicos. En Costa Rica, la Encuesta Nacional de Hogares incluye a las personas desplazadas por la fuerza y el ACNUR puede utilizar las estadísticas oficiales para calcular sus propios indicadores.
 
 
 
@@ -49,30 +49,33 @@ Igualmente, cada año se hacen investigaciones específicas o módulos especiale
 
 # Impact Area 2 - Realizing Basic Rights in Safe Environment
 
+```{r population_figures, include=FALSE}
 
-
-```{r layout='Title and Content', ph=officer::ph_location_type(type="body")}
 # Total population
 
+## Nicaraguans
 total_nic <- ENAHO_2021_usuarios_%>%
   filter(LugNac == 2)%>%
   count(.,wt=FACTOR)
 
 
-
+## CostaRicans
 total_crc <- ENAHO_2021_usuarios_%>%
   filter(LugNac == 0 | LugNac == 1)%>%
   count(.,wt=FACTOR)
 
+```
+
+
+```{r layout='Title and Content', ph=officer::ph_location_type(type="body")}
 
 # 2.1 Proportion of PoC living below the national poverty line. [GCR 2.1.1 and SDG 1.2.1]
+
+##np1 = extreme poverty  and np2= poverty (no extreme)
 
 poverty_nic <- ENAHO_2021_usuarios_%>%
   filter( LugNac == 2, np == 1 | np== 2)%>%
   count(.,wt=FACTOR)
-
-
-
 
 poverty_crc <- ENAHO_2021_usuarios_%>%
   filter(LugNac == 0 | LugNac == 1, np == 1 | np== 2)%>%
@@ -124,6 +127,7 @@ ind_22_nic <- access_nic/total_nic
 ind_22_crc <- access_crc/total_crc
 
 #2.3 Proportion of PoC with access to health services
+##Considering health insurance as access to health services
 
 health_nic <-ENAHO_2021_usuarios_%>%
   filter( LugNac == 2)%>%
@@ -193,6 +197,9 @@ rvg::dml(ggobj = p, fonts = list(serif = 'Lato'))
 ```{r layout='Title and Content', ph=officer::ph_location_type(type="body")}
 
 # Primary education enrollment
+## considering individuals from 6 to 11
+
+
 ## Nicaraguans
 
 nic_primary_age <- ENAHO_2021_usuarios_%>%
@@ -231,8 +238,10 @@ crc_primary_enrolled <- ENAHO_2021_usuarios_%>%
 ind32a_crc <- (crc_primary_enrolled/crc_primary_age)
 
 # Secundary education enrollment
-## Nicaraguans
+## considering individuals from 12 to 17
 
+
+## Nicaraguans
 
 nic_secundary_age <- ENAHO_2021_usuarios_%>%
   filter(LugNac == 2, A5 == 12 | A5== 13 | A5 == 14 
@@ -252,7 +261,6 @@ nic_secundary_enrolled <- ENAHO_2021_usuarios_%>%
 ind32b_nic <- (nic_secundary_enrolled/nic_secundary_age)
 
 ## CostaRicans
-
 
 
 crc_secundary_age <- ENAHO_2021_usuarios_%>%
@@ -346,6 +354,7 @@ crc_clean_fuels <- ENAHO_2021_usuarios_%>%
 ind81_crc <- crc_clean_fuels$n/total_crc
 
 # 13.3 Proportion of PoC (working age) who are unemployed.
+## considering the work force from 18 to 65
 
 #Nicaraguans
 
@@ -398,6 +407,7 @@ ind133_crc <- crc_unemployed/crc_work_force
 
 
 # 16.1. Proportion of PoC with secure tenure rights and/or property rights to housing and/or land [revised SDG indicator 1.4.2]
+# considering that the property is owned (partially o totally paid) o rented.
 
 
 #Nicaraguans
