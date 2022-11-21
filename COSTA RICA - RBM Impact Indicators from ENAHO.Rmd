@@ -9,11 +9,13 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, fig.cap = TRUE)
+
 library(officedown)
 library(tidyverse)
 library(unhcrthemes)
 library(fontawesome)
 library(haven)
+
 # turn off the automatic use of showtext functionality, so that the dml function can works properly
 showtext::showtext_auto(FALSE) 
 
@@ -45,11 +47,11 @@ Se contempla además el estudio de la tenencia de vivienda y sus característica
 
 Igualmente, cada año se hacen investigaciones específicas o módulos especiales, dentro de los que se pueden mencionar acceso a programas sociales utilización de servicios de salud, telecomunicaciones, trabajo infantil, migración, seguridad ciudadana, lactancia materna.
 
---- 
+---  
 
 # Impact Area 2 - Realizing Basic Rights in Safe Environment
 
-```{r population_figures, include=FALSE}
+```{r warning=FALSE, layout='Title and Content', ph=officer::ph_location_type(type="body")}
 
 # Total population
 
@@ -64,14 +66,9 @@ total_crc <- ENAHO_2021_usuarios_%>%
   filter(LugNac == 0 | LugNac == 1)%>%
   count(.,wt=FACTOR)
 
-```
-
-
-```{r layout='Title and Content', ph=officer::ph_location_type(type="body")}
-
 # 2.1 Proportion of PoC living below the national poverty line. [GCR 2.1.1 and SDG 1.2.1]
 
-##np1 = extreme poverty  and np2= poverty (no extreme)
+## np1 = extreme poverty  and np2= poverty (no extreme)
 
 poverty_nic <- ENAHO_2021_usuarios_%>%
   filter( LugNac == 2, np == 1 | np== 2)%>%
@@ -84,7 +81,7 @@ poverty_crc <- ENAHO_2021_usuarios_%>%
 ind_21_nic <- poverty_nic$n/total_nic
 ind_21_crc <- poverty_crc$n/total_crc
 
-#2.2 Proportion of PoCs residing in physically safe and secure settlements with access to basic facilities
+# 2.2 Proportion of PoCs residing in physically safe and secure settlements with access to basic facilities
 ## Considering: Access to water(V13A) + Electricity(V15) + Hygiene(V14A) + Clean fuels(V16)  = Person has access to basic services
 
 access_nic <-ENAHO_2021_usuarios_%>%
@@ -126,8 +123,8 @@ access_crc <-ENAHO_2021_usuarios_%>%
 ind_22_nic <- access_nic/total_nic
 ind_22_crc <- access_crc/total_crc
 
-#2.3 Proportion of PoC with access to health services
-##Considering health insurance as access to health services
+# 2.3 Proportion of PoC with access to health services
+## Considering health insurance as access to health services
 
 health_nic <-ENAHO_2021_usuarios_%>%
   filter( LugNac == 2)%>%
@@ -145,7 +142,7 @@ filter(A11 == 0)%>%
 ind_23_nic <- (1-(health_nic/total_nic))
 ind_23_crc <- (1-(health_crc/total_crc))
 
-##and now the graph
+# and now the graph
 
 pop <- c("Costa Ricans", "Nicaraguans","Costa Ricans", "Nicaraguans","Costa Ricans", "Nicaraguans" )
 ind <- c("rbm2.1","rbm2.1","rbm2.2","rbm2.2","rbm2.3","rbm2.3")
@@ -356,7 +353,7 @@ ind81_crc <- crc_clean_fuels$n/total_crc
 # 13.3 Proportion of PoC (working age) who are unemployed.
 ## considering the work force from 18 to 65
 
-#Nicaraguans
+# Nicaraguans
 
 nic_unemployed <-ENAHO_2021_usuarios_%>%
   filter( LugNac == 2)%>%
@@ -381,7 +378,7 @@ nic_work_force <-ENAHO_2021_usuarios_%>%
 ind133_nic <- nic_unemployed/nic_work_force
 
 
-#Costaricans
+# Costaricans
 
 crc_unemployed <-ENAHO_2021_usuarios_%>%
   filter( LugNac == 0 | LugNac == 1)%>%
@@ -410,7 +407,7 @@ ind133_crc <- crc_unemployed/crc_work_force
 # considering that the property is owned (partially o totally paid) o rented.
 
 
-#Nicaraguans
+# Nicaraguans
 
 nic_secure_tenure <-ENAHO_2021_usuarios_%>%
   filter( LugNac == 2)%>%
@@ -421,7 +418,7 @@ nic_secure_tenure <-ENAHO_2021_usuarios_%>%
   
 ind161_nic <- nic_secure_tenure/total_nic
 
-#Costaricains
+# Costaricains
 
 crc_secure_tenure <-ENAHO_2021_usuarios_%>%
   filter( LugNac == 0  | LugNac == 1)%>%
