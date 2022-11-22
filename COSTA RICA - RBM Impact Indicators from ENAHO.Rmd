@@ -351,56 +351,52 @@ crc_clean_fuels <- ENAHO_2021_usuarios_%>%
 ind81_crc <- crc_clean_fuels$n/total_crc
 
 # 13.3 Proportion of PoC (working age) who are unemployed.
-## considering the work force from 18 to 65
+## considering the work force above 15 Unemployed -> CondAct = 2 and Employed -> CondAct == 1
 
 # Nicaraguans
 
-nic_unemployed <-ENAHO_2021_usuarios_%>%
+nic_CondAct2 <-ENAHO_2021_usuarios_%>%
   filter( LugNac == 2)%>%
   select(c(FACTOR,ID_HOGAR,REGION,ZONA,TamHog,LugNac,A5,B6,B7A,B7B,B7C,B7D,B7E,
            B7F,B7G,B7H,B7I,B7J,B7K,B8))%>%
-  filter(A5>17 & A5<66,(B6==8 | B6==9) & (B7A==1 | B7B == 2 | B7C == 3 | B7D == 4 
+  filter(A5>15,(B6==8 | B6==9) & (B7A==1 | B7B == 2 | B7C == 3 | B7D == 4 
                                   | B7E == 5 | B7F == 6 | B7G == 7 | B7H == 8 |
-                                    B7I == 9 | B7J == 10 | B7K == 11 | B8 == 1))%>%
+                                    B7I == 9 | B7J == 10 | B7K == 11 | B8 == 1 | B8 == 2| B8 == 3))%>%
   count(.,wt=FACTOR)
 
 
-nic_work_force <-ENAHO_2021_usuarios_%>%
+nic_CondAct1 <-ENAHO_2021_usuarios_%>%
   filter( LugNac == 2)%>%
-  select(c(FACTOR,ID_HOGAR,REGION,ZONA,TamHog,LugNac,A5,B6,B7A,B7B,B7C,B7D,B7E,
+  select(c(FACTOR,ID_HOGAR,REGION,ZONA,TamHog,LugNac,A5,B1,B2,B3,B5,B6,B7A,B7B,B7C,B7D,B7E,
            B7F,B7G,B7H,B7I,B7J,B7K,B8))%>%
-  filter(A5>17 & A5<66,(B6==1  | B6==2 | B6==3| B6==4| B6==5| B6==6 | B6==7) 
-         | ((B6==8 | B6 == 9) & (B8 == 4 | B8 == 5| B8 == 6| B8 == 7
-                                 | B8 == 8| B8 == 9| B8 == 10| B8 == 11
-                                 | B8 == 12| B8 == 13| B8 == 14| B8 == 15)))%>%
+  filter(A5>15,  (B1== 1 | B2 == 1 | B2 == 2| B2 == 3| B2 == 4| B2 == 5| B2 == 6| B2 == 7
+            | B2 == 8 | B3 == 1 | B5 == 1 | B5 == 2 | B5 == 3 | B5 == 4 | B5 == 5))%>% 
   count(.,wt=FACTOR)
-  
-ind133_nic <- nic_unemployed/nic_work_force
+
+ind133_nic <- nic_CondAct2/(nic_CondAct1+nic_CondAct2)
 
 
 # Costaricans
 
-crc_unemployed <-ENAHO_2021_usuarios_%>%
+crc_CondAct2 <-ENAHO_2021_usuarios_%>%
   filter( LugNac == 0 | LugNac == 1)%>%
   select(c(FACTOR,ID_HOGAR,REGION,ZONA,TamHog,LugNac,A5,B6,B7A,B7B,B7C,B7D,B7E,
            B7F,B7G,B7H,B7I,B7J,B7K,B8))%>%
-  filter(A5>17 & A5<66,(B6==8 | B6==9) & (B7A==1 | B7B == 2 | B7C == 3 | B7D == 4 
+  filter(A5>15,(B6==8 | B6==9) & (B7A==1 | B7B == 2 | B7C == 3 | B7D == 4 
                                   | B7E == 5 | B7F == 6 | B7G == 7 | B7H == 8 |
                                     B7I == 9 | B7J == 10 | B7K == 11 | B8 == 1))%>%
   count(.,wt=FACTOR)
 
 
-crc_work_force <-ENAHO_2021_usuarios_%>%
+crc_CondAct1 <-ENAHO_2021_usuarios_%>%
   filter( LugNac == 0 | LugNac == 1)%>%
-  select(c(FACTOR,ID_HOGAR,REGION,ZONA,TamHog,LugNac,A5,B6,B7A,B7B,B7C,B7D,B7E,
+   select(c(FACTOR,ID_HOGAR,REGION,ZONA,TamHog,LugNac,A5,B1,B2,B3,B5,B6,B7A,B7B,B7C,B7D,B7E,
            B7F,B7G,B7H,B7I,B7J,B7K,B8))%>%
-  filter(A5>17 & A5<66,(B6==1  | B6==2 | B6==3| B6==4| B6==5| B6==6 | B6==7) 
-         | ((B6==8 | B6 == 9) & (B8 == 4 | B8 == 5| B8 == 6| B8 == 7
-                                 | B8 == 8| B8 == 9| B8 == 10| B8 == 11
-                                 | B8 == 12| B8 == 13| B8 == 14| B8 == 15)))%>%
+  filter(A5>15, (B1== 1 | B2 == 1 | B2 == 2| B2 == 3| B2 == 4| B2 == 5| B2 == 6| B2 == 7
+            | B2 == 8 | B3 == 1 | B5 == 1 | B5 == 2 | B5 == 3 | B5 == 4 | B5 == 5))%>% 
   count(.,wt=FACTOR)
   
-ind133_crc <- crc_unemployed/crc_work_force
+ind133_crc <- crc_CondAct2/(crc_CondAct1+crc_CondAct2)
 
 
 # 16.1. Proportion of PoC with secure tenure rights and/or property rights to housing and/or land [revised SDG indicator 1.4.2]
