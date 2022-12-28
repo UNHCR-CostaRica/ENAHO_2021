@@ -18,14 +18,73 @@ library(haven)
 library(srvyr)
 
 # turn off the automatic use of showtext functionality, so that the dml function can works properly
-showtext::showtext_auto(FALSE) 
+showtext::showtext_auto(FALSE)
 
-data <- read_sav(here::here("data-raw","ENAHO 2021 usuarios .sav"))%>%
+data <- read_sav(here::here("data-raw", "ENAHO 2021 usuarios .sav")) %>%
   as_factor()
 
 ```
 
+```{r tidying, include=FALSE}
 
+# Create New Variables : poverty, drinking water, sanitation, hygiene, electricity,clean fuels, access2_all_BS, health insurance, primary_enrollment,secondary_enrollment,secure_tenure,CondAct
+
+data <- data |>
+  # create variable poverty (poor for extreme poverty and poverty no extreme o no poor)
+  mutate(
+    poverty = as.factor(
+      if_else(
+        np == "Pobreza extrema" | np == "Pobreza no extrema",
+        "Poor",
+        "No poor"
+      )
+    )
+  ) |>
+  mutate(
+    drinking_water =
+      if_else(V12 == "Pozo" | V12 == "Río, quebrada o naciente" | V12 == "Lluvia u otro", "No", "Yes")
+  ) |>
+  mutate(sanitation = if_else(V13A == "No tiene", "No", "Yes")) |>
+  mutate(hygiene = if_else(V14A == "No", "No", "Yes")) |>
+  mutate(electricity = if_else(V15 == "No hay luz eléctrica", "No", "Yes")) |>
+  mutate(clean_fuels = if_else(V16 == "Ninguno (no cocina)" | V16 == "Leña o carbón" | V16 == "Otro", "No", "Yes")) |>
+  mutate(access2_all_BS = ifelse(
+    drinking_water == "Yes" &
+      sanitation == "Yes" &
+      hygiene == "Yes" &
+      electricity == "Yes" &
+      clean_fuels == "Yes",
+    "Yes",
+    "No"
+  )) |>
+  mutate(health_insurance = if_else(
+    A11 == "No asegurado",
+    "No",
+    "Yes"
+  )) |>
+  mutate(primary_enrollment = if_else(
+    A13 == "Escuela" & (A5 == 6 | A5 == 7 | A5 == 8 |
+      A5 == 9 | A5 == 10 | A5 == 11),
+    "Yes",
+    "No"
+  )) |>
+  mutate(secondary_enrollment = if_else(
+    A13 == "Colegio" & (A5 == 12 | A5 == 13 | A5 == 14 |
+      A5 == 15 | A5 == 16 | A5 == 17),
+    "Yes",
+    "No"
+  )) |>
+  mutate(secure_tenure = if_else(V2A == "Propia totalmente pagada" | V2A == "Propia pagando a plazos" | V2A == "Alquilada", "Yes", "No")) |>
+  mutate(A5 = as.numeric(A5))
+
+
+svy <- as_survey(
+  data,
+  strata = c(REGION, ZONA),
+  ids = c(UPM, CUESTIONARIO),
+  weights = FACTOR
+)
+```
 
 ---
 
@@ -53,191 +112,122 @@ Igualmente, cada año se hacen investigaciones específicas o módulos especiale
 
 # Impact Area 2 - Realizing Basic Rights in Safe Environment
 
-```{r}
-
-# Create New Variables : poverty, drinking water, sanitation, hygiene, electricity,clean fuels, access2_all_BS, health insurance, primary_enrollment,secondary_enrollment,secure_tenure,CondAct
-
-data <- data |>
-  mutate(
-    poverty = as.factor(
-      if_else(
-        np == "Pobreza extrema" | np== "Pobreza no extrema", 
-        "Poor",
-        "No poor"
-      )
-    )
-  )|>
-    mutate(drinking_water= 
-           if_else(V12 == "Pozo" | V12 == "Río, quebrada o naciente" | V12 == "Lluvia u otro", "No","Yes"))|>
-  mutate(sanitation = if_else(V13A == "No tiene", "No","Yes"))|>
-  mutate(hygiene = if_else(V14A == "No", "No", "Yes"))|>
-  mutate(electricity = if_else(V15 == "No hay luz eléctrica", "No", "Yes"))|>
-  mutate(clean_fuels = if_else(V16 == "Ninguno (no cocina)" | V16 == "Leña o carbón" | V16 == "Otro","No","Yes"))|>
-  mutate(access2_all_BS=ifelse(drinking_water == "Yes" &
-                                      sanitation == "Yes" & 
-                                     hygiene == "Yes" &
-                                     electricity == "Yes" &
-                                     clean_fuels == "Yes"
-                                     , "Yes", "No"))|>
-  mutate(health_insurance = if_else(
-    A11 == "No asegurado", "No","Yes"
-  )) |>
-  mutate(primary_enrollment = if_else(
-    A13 == "Escuela" & (A5 == 6 | A5== 7 | A5 == 8 
-         | A5 == 9 | A5 == 10 | A5 == 11), "Yes", "No"
-  ) )|>
-    mutate(secondary_enrollment = if_else(
-    A13 == "Colegio" & (A5 == 12 | A5== 13 | A5 == 14 
-         | A5 == 15 | A5 == 16 | A5 == 17), "Yes", "No"
-  ) ) |>
-   mutate(secure_tenure = if_else(V2A == "Propia totalmente pagada" | V2A == "Propia pagando a plazos" | V2A == "Alquilada","Yes","No")) |>
-  mutate(A5 = as.numeric(A5))|>
-  mutate(CondAct = 
-           ifelse(
-    (A5>15 & (B1== "Sí" | 
-    B2 == "Participó en labores agropecuarias" | 
-    B2 == "Hizo algo para vender (costuras, manualidades, comidas)"| 
-  B2 == "Vendió algún producto (alimentos, joyas, rifas o ventas por catálogo)"| 
-  B2 == "Cuidó niños, ancianos o personas enfermas de otro hogar recibiendo pago en dinero o en especie"| 
-  B2 == "Realizó algún servicio doméstico para personas de otro hogar recibiendo pago en dinero o en especie (limpiar, planchar)"| 
-  B2 == "Realizó algún otro servicio (pintar uñas, corte de pelo, cuidar carros, etc.) recibiendo pago en dinero o en especie"| 
-  B2 == "Realizó trabajos variados, camarones, chambas"| 
-  B2 == "Hizo algún otro trabajo recibiendo pago en dinero o en especie"| 
-  B3 == "Sí" | 
-  B5 == "Vacaciones, incapacidad, huelga, permiso o suspensión de actividades, recibiendo sueldo o ingresos del negocio" | 
-  B5 == "No llegaron clientes al local u oficina" | 
-  B5 == "Pidió permiso sin goce de sueldo por un mes o menos" | 
-  B5 == "Enfermedad, vacaciones sin recibir sueldo o ingresos por un mes o menos con seguridad de regreso al trabajo" | 
-  B5 == "Suspensión actividad sin ingresos 1 mes o menos con seguridad regreso trab. (avería equipo, mal tiempo, falta mat.prima)")),
-"Employed",
-           
-           
-           ifelse(A5>15 & (B6 == "Podría, sin ninguna restricción" | 
-          B6 == "Con ciertas condiciones laborales  (horario, lugar, otra)") &
-        (B7A == "Sí" | 
-           B7B == "Sí" | 
-           B7C == "Sí" | 
-           B7D == "Sí"  | 
-           B7E == "Sí" | 
-           B7F == "Sí" | 
-           B7G == "Sí" | 
-           B7H == "Sí" |
-           B7I == "Sí" | 
-           B7J == "Sí" | 
-           B7K == "Sí" | 
-           B8 == "Ya encontró trabajo" | 
-           B8 == "Espera reinicio de operaciones o reapertura del negocio"| 
-           B8 == "Espera respuesta de gestiones anteriores"),
-  
-  "Unemployed",
-    NA)))
-  
-
-svy <- as_survey(data,
-                 strata = c(REGION, ZONA), 
-                 ids = c(UPM, CUESTIONARIO), 
-                 weights = FACTOR)
 
 
-```
 
-
-```{r warning=FALSE, layout='Title and Content', ph=officer::ph_location_type(type="body")}
+```{r ia2, warning=FALSE, layout='Title and Content', ph=officer::ph_location_type(type="body")}
 
 
 # 2.1 Proportion of PoC living below the national poverty line. [GCR 2.1.1 and SDG 1.2.1]
 
-ind_21_nic <-  svy|>
+ind_21_nic <- svy |>
   filter(LugNac == "En Nicaragua") |>
   group_by(poverty) |>
-  summarize( p = survey_prop(vartype = "cv"))|>
-filter(poverty == "Poor")
+  summarize(p = survey_prop(vartype = "cv")) |>
+  filter(poverty == "Poor")
 
-ind_21_crc <- svy|>
-  filter(LugNac == "En mismo cantón de residencia" | LugNac == "En otro cantón de residencia")|>
+ind_21_crc <- svy |>
+  filter(LugNac == "En mismo cantón de residencia" | LugNac == "En otro cantón de residencia") |>
   group_by(poverty) |>
-  summarize( p = survey_prop(vartype = "cv"))|>
-filter(poverty == "Poor")
+  summarize(p = survey_prop(vartype = "cv")) |>
+  filter(poverty == "Poor")
 
 
 # 2.2 Proportion of PoCs residing in physically safe and secure settlements with access to basic facilities
 ## Considering: Access to water(V13A) + Electricity(V15) + Hygiene(V14A) + Clean fuels(V16)  = Person has access to basic services
 
 
-ind_22_nic <-  svy |>
+ind_22_nic <- svy |>
   filter(LugNac == "En Nicaragua") |>
   group_by(access2_all_BS) |>
-  summarize( p = survey_prop(vartype = "cv"))|>
-filter(access2_all_BS == "Yes")
+  summarize(p = survey_prop(vartype = "cv")) |>
+  filter(access2_all_BS == "Yes")
 
 
-ind_22_crc <-  svy|>
-  filter(LugNac == "En mismo cantón de residencia" | LugNac == "En otro cantón de residencia")|>
+ind_22_crc <- svy |>
+  filter(LugNac == "En mismo cantón de residencia" | LugNac == "En otro cantón de residencia") |>
   group_by(access2_all_BS) |>
-  summarize( p = survey_prop(vartype = "cv"))|>
-filter(access2_all_BS == "Yes")
-   
+  summarize(p = survey_prop(vartype = "cv")) |>
+  filter(access2_all_BS == "Yes")
+
 
 # 2.3 Proportion of PoC with access to health services
 ## Considering health insurance as access to health services
 
 
-ind_23_nic <-  svy|>
+ind_23_nic <- svy |>
   filter(LugNac == "En Nicaragua") |>
-  group_by(health_insurance)|>
-  summarize( p = survey_prop(vartype = "cv")) |>
+  group_by(health_insurance) |>
+  summarize(p = survey_prop(vartype = "cv")) |>
   filter(health_insurance == "Yes")
 
 
-ind_23_crc <-  svy |>
+ind_23_crc <- svy |>
   filter(LugNac == "En mismo cantón de residencia" | LugNac == "En otro cantón de residencia") |>
   group_by(health_insurance) |>
-  summarize( p = survey_prop(vartype = "cv"))|>
-filter(health_insurance == "Yes")
+  summarize(p = survey_prop(vartype = "cv")) |>
+  filter(health_insurance == "Yes")
 
 
 # and now the graph
 
-pop <- c("CostaRicans", "Nicaraguans","CostaRicans", "Nicaraguans","CostaRicans", "Nicaraguans" )
-ind <- c("rbm2.1","rbm2.1","rbm2.2","rbm2.2","rbm2.3","rbm2.3")
-p <- c(ind_21_crc$p,ind_21_nic$p,ind_22_crc$p,ind_22_nic$p,ind_23_crc$p,ind_23_nic$p)
-p_cv <- c(ind_21_crc$p_cv,ind_21_nic$p_cv,ind_22_crc$p_cv,ind_22_nic$p_cv,ind_23_crc$p_cv,ind_23_nic$p_cv)
+pop <- c("CostaRicans", "Nicaraguans", "CostaRicans", "Nicaraguans", "CostaRicans", "Nicaraguans")
+ind <- c("rbm2.1", "rbm2.1", "rbm2.2", "rbm2.2", "rbm2.3", "rbm2.3")
+p <- c(ind_21_crc$p, ind_21_nic$p, ind_22_crc$p, ind_22_nic$p, ind_23_crc$p, ind_23_nic$p)
+p_cv <- c(ind_21_crc$p_cv, ind_21_nic$p_cv, ind_22_crc$p_cv, ind_22_nic$p_cv, ind_23_crc$p_cv, ind_23_nic$p_cv)
 
 
-indicators <- tibble(pop,ind,p,p_cv)%>%
+indicators <- tibble(pop, ind, p, p_cv) %>%
   mutate(ind = as.factor(ind), pop = as.factor(pop))
 
-rbm_indicators <- 
-  c(rbm2.1 = "2.1 Proportion of PoC living below the national poverty line",
+rbm_indicators <-
+  c(
+    rbm2.1 = "2.1 Proportion of PoC living below the national poverty line",
     rbm2.2 = "2.2 Proportion of PoCs residing in physically safe and secure settlements with access to basic facilities.",
-    rbm2.3 = "2.3 Proportion of PoC with access to health services")
-  
- ggplot(data=indicators, 
-       aes( x = p,
-            y = fct_rev(ind), color = pop))+
-  geom_point()+
-  geom_errorbar(aes(xmin = p - p_cv, xmax = p + p_cv), width = 0.2)+
-  geom_text(aes(label= scales::label_percent(.1)(p)),
-            vjust= ifelse((indicators$pop == "Nicaraguans"),-1.25, 2))+
-  scale_x_continuous(labels= scales::label_percent(),
-                     limits = c(0,1),
-                     breaks = c(0,.5,1))+
-  scale_color_manual(values = c("#666666",
-                                "#0072BC"))+
-  scale_y_discrete(labels = str_wrap(rev(rbm_indicators), 40))+
-  labs(x = "Estimate", y = "",
-       title = "Impact Area 2:",
-       subtitle = " Realizing Rights in Safe Environments",
-       caption = glue::glue("Encuesta Nacional de Hogares (ENAHO) 2021\n",
-                            "# of Nicaraguans = 2,229)")) +
+    rbm2.3 = "2.3 Proportion of PoC with access to health services"
+  )
+
+ggplot(
+  data = indicators,
+  aes(
+    x = p,
+    y = fct_rev(ind),
+    color = pop
+  )
+) +
+  geom_point() +
+  geom_errorbar(aes(xmin = p - p_cv, xmax = p + p_cv), width = 0.2) +
+  geom_text(
+    aes(label = scales::label_percent(.1)(p)),
+    vjust = ifelse((indicators$pop == "Nicaraguans"), -1.25, 2)
+  ) +
+  scale_x_continuous(
+    labels = scales::label_percent(),
+    limits = c(0, 1),
+    breaks = c(0, .5, 1)
+  ) +
+  scale_color_manual(values = c(
+    "#666666",
+    "#0072BC"
+  )) +
+  scale_y_discrete(labels = str_wrap(rev(rbm_indicators), 40)) +
+  labs(
+    x = "Estimate",
+    y = "",
+    title = "Impact Area 2:",
+    subtitle = " Realizing Rights in Safe Environments",
+    caption = glue::glue(
+      "Encuesta Nacional de Hogares (ENAHO) 2021\n",
+      "# of Nicaraguans = 2,229)"
+    )
+  ) +
   unhcrthemes::theme_unhcr(font_size = 15) +
   theme(panel.grid.minor.x = element_blank()) -> p
 
 
 # turn off the automatic use of showtext functionality, so that the dml function can works properly
-showtext::showtext_auto(FALSE) 
-rvg::dml(ggobj = p, fonts = list(serif = 'Lato'))
-
+showtext::showtext_auto(FALSE)
+rvg::dml(ggobj = p, fonts = list(serif = "Lato"))
 ```
 
 --- 
@@ -246,29 +236,29 @@ rvg::dml(ggobj = p, fonts = list(serif = 'Lato'))
 
 
 
-```{r layout='Title and Content', ph=officer::ph_location_type(type="body")}
+```{r ia3, layout='Title and Content', ph=officer::ph_location_type(type="body")}
 
 # Primary education enrollment
 ## considering individuals from 6 to 11
 
 ## Nicaraguans
 
-ind32a_nic <-  svy|>
+ind32a_nic <- svy |>
   filter(LugNac == "En Nicaragua") |>
-  filter((A5 == 6 | A5== 7 | A5 == 8 
-         | A5 == 9 | A5 == 10 | A5 == 11))|>
-  group_by(primary_enrollment)|>
-  summarize( p = survey_prop(vartype = "cv")) |>
+  filter((A5 == 6 | A5 == 7 | A5 == 8 |
+    A5 == 9 | A5 == 10 | A5 == 11)) |>
+  group_by(primary_enrollment) |>
+  summarize(p = survey_prop(vartype = "cv")) |>
   filter(primary_enrollment == "Yes")
 
 ## CostaRicans
 
-ind32a_crc <-  svy|>
+ind32a_crc <- svy |>
   filter(LugNac == "En mismo cantón de residencia" | LugNac == "En otro cantón de residencia") |>
-  filter((A5 == 6 | A5== 7 | A5 == 8 
-         | A5 == 9 | A5 == 10 | A5 == 11))|>
-  group_by(primary_enrollment)|>
-  summarize( p = survey_prop(vartype = "cv")) |>
+  filter((A5 == 6 | A5 == 7 | A5 == 8 |
+    A5 == 9 | A5 == 10 | A5 == 11)) |>
+  group_by(primary_enrollment) |>
+  summarize(p = survey_prop(vartype = "cv")) |>
   filter(primary_enrollment == "Yes")
 
 # Secundary education enrollment
@@ -277,65 +267,82 @@ ind32a_crc <-  svy|>
 
 ## Nicaraguans
 
-ind32b_nic <-  svy|>
+ind32b_nic <- svy |>
   filter(LugNac == "En Nicaragua") |>
-  filter(A5 == 12 | A5== 13 | A5 == 14 
-         | A5 == 15 | A5 == 16 | A5 == 17)|>
-  group_by(secondary_enrollment)|>
-  summarize( p = survey_prop(vartype = "cv")) |>
+  filter(A5 == 12 | A5 == 13 | A5 == 14 |
+    A5 == 15 | A5 == 16 | A5 == 17) |>
+  group_by(secondary_enrollment) |>
+  summarize(p = survey_prop(vartype = "cv")) |>
   filter(secondary_enrollment == "Yes")
 
 ## CostaRicans
 
-ind32b_crc <-  svy|>
+ind32b_crc <- svy |>
   filter(LugNac == "En mismo cantón de residencia" | LugNac == "En otro cantón de residencia") |>
-  filter(A5 == 12 | A5== 13 | A5 == 14 
-         | A5 == 15 | A5 == 16 | A5 == 17)|>
-  group_by(secondary_enrollment)|>
-  summarize( p = survey_prop(vartype = "cv")) |>
+  filter(A5 == 12 | A5 == 13 | A5 == 14 |
+    A5 == 15 | A5 == 16 | A5 == 17) |>
+  group_by(secondary_enrollment) |>
+  summarize(p = survey_prop(vartype = "cv")) |>
   filter(secondary_enrollment == "Yes")
 
 # and now the graph
 
-pop <- c("Costa Ricans", "Nicaraguans","Costa Ricans", "Nicaraguans")
-ind <- c("rbm3.2a","rbm3.2a","rbm3.2b","rbm3.2b")
-p <- c(ind32a_crc$p,ind32a_nic$p,ind32b_crc$p,ind32b_nic$p)
-p_cv <- c(ind32a_crc$p_cv,ind32a_nic$p_cv,ind32b_crc$p_cv,ind32b_nic$p_cv)
+pop <- c("Costa Ricans", "Nicaraguans", "Costa Ricans", "Nicaraguans")
+ind <- c("rbm3.2a", "rbm3.2a", "rbm3.2b", "rbm3.2b")
+p <- c(ind32a_crc$p, ind32a_nic$p, ind32b_crc$p, ind32b_nic$p)
+p_cv <- c(ind32a_crc$p_cv, ind32a_nic$p_cv, ind32b_crc$p_cv, ind32b_nic$p_cv)
 
-indicators <- tibble(pop,ind,p,p_cv)%>%
+indicators <- tibble(pop, ind, p, p_cv) %>%
   mutate(ind = as.factor(ind), pop = as.factor(pop))
 
 
-rbm_indicators <- 
-  c(rbm3.1a = "3.2a Proportion of PoC enrolled in primary education",
-    rbm3.1b = "3.2b Proportion of PoC enrolled in secondary education")
+rbm_indicators <-
+  c(
+    rbm3.1a = "3.2a Proportion of PoC enrolled in primary education",
+    rbm3.1b = "3.2b Proportion of PoC enrolled in secondary education"
+  )
 
-ggplot(data=indicators, 
-       aes( x = p,
-            y = fct_rev(ind), color = pop))+
-  geom_point()+
-  geom_errorbar(aes(xmin = p - p_cv, xmax = p + p_cv), width = 0.2)+
-  geom_text(aes(label= scales::label_percent(.1)(p)),
-            vjust= ifelse((indicators$pop == "Nicaraguans"),-1.25, 2))+
-  scale_x_continuous(labels= scales::label_percent(),
-                     limits = c(0,1),
-                     breaks = c(0,.5,1))+
-  scale_color_manual(values =  c("#666666",
-                                "#0072BC"))+
-  scale_y_discrete(labels = str_wrap(rev(rbm_indicators), 40))+
-  labs(x = "Estimate", y = "",
-       title = "Impact Area 3:",
-       subtitle = "Empowering Communities and Achieving Gender Equality",
-       caption = glue::glue("Encuesta Nacional de Hogares (ENAHO) 2021\n",
-                            "# of Nicaraguans = 2,229)")) +
+ggplot(
+  data = indicators,
+  aes(
+    x = p,
+    y = fct_rev(ind),
+    color = pop
+  )
+) +
+  geom_point() +
+  geom_errorbar(aes(xmin = p - p_cv, xmax = p + p_cv), width = 0.2) +
+  geom_text(
+    aes(label = scales::label_percent(.1)(p)),
+    vjust = ifelse((indicators$pop == "Nicaraguans"), -1.25, 2)
+  ) +
+  scale_x_continuous(
+    labels = scales::label_percent(),
+    limits = c(0, 1),
+    breaks = c(0, .5, 1)
+  ) +
+  scale_color_manual(values = c(
+    "#666666",
+    "#0072BC"
+  )) +
+  scale_y_discrete(labels = str_wrap(rev(rbm_indicators), 40)) +
+  labs(
+    x = "Estimate",
+    y = "",
+    title = "Impact Area 3:",
+    subtitle = "Empowering Communities and Achieving Gender Equality",
+    caption = glue::glue(
+      "Encuesta Nacional de Hogares (ENAHO) 2021\n",
+      "# of Nicaraguans = 2,229)"
+    )
+  ) +
   unhcrthemes::theme_unhcr(font_size = 15) +
-  theme(panel.grid.minor.x = element_blank())  -> p
+  theme(panel.grid.minor.x = element_blank()) -> p
 
 
 # turn off the automatic use of showtext functionality, so that the dml function can works properly
-showtext::showtext_auto(FALSE) 
-rvg::dml(ggobj = p, fonts = list(serif = 'Lato'))
-
+showtext::showtext_auto(FALSE)
+rvg::dml(ggobj = p, fonts = list(serif = "Lato"))
 ```
 
 
@@ -344,26 +351,26 @@ rvg::dml(ggobj = p, fonts = list(serif = 'Lato'))
 # Outcome Indicators
 
 
-```{r layout='Title and Content', ph=officer::ph_location_type(type="body")}
+```{r outcome, layout='Title and Content', ph=officer::ph_location_type(type="body")}
 
 
 # 8.2 Proportion of PoC with primary reliance on clean (cooking) fuels and technology [SDG 7.1.2 Tier 1]
 
 # Nicaraguans
 
-ind81_nic <-  svy|>
+ind81_nic <- svy |>
   filter(LugNac == "En Nicaragua") |>
-   group_by(clean_fuels)|>
-  summarize( p = survey_prop(vartype = "cv")) |>
+  group_by(clean_fuels) |>
+  summarize(p = survey_prop(vartype = "cv")) |>
   filter(clean_fuels == "Yes")
 
 
 # CostaRicans
 
-ind81_crc <-  svy|>
+ind81_crc <- svy |>
   filter(LugNac == "En mismo cantón de residencia" | LugNac == "En otro cantón de residencia") |>
-   group_by(clean_fuels)|>
-  summarize( p = survey_prop(vartype = "cv")) |>
+  group_by(clean_fuels) |>
+  summarize(p = survey_prop(vartype = "cv")) |>
   filter(clean_fuels == "Yes")
 
 # 13.3 Proportion of PoC (working age) who are unemployed.
@@ -371,23 +378,26 @@ ind81_crc <-  svy|>
 
 # Nicaraguans
 
-ind133_nic <-  svy|>
+ind133_nic <- svy |>
   filter(LugNac == "En Nicaragua") |>
-  filter(CondAct == "Employed" | CondAct == "Unemployed") |>
-   group_by(CondAct)|>
-  summarize( p = survey_prop(vartype = "cv"))|>
-  filter(CondAct == "Unemployed")
+  filter(A5 > 14) |>
+  filter(CondAct == "Ocupado" | CondAct == "Desempleado abierto") |>
+  group_by(CondAct) |>
+  summarize(p = survey_prop(vartype = "cv")) |>
+  filter(CondAct == "Desempleado abierto")
+
 
 
 # Costaricans
 
 
-ind133_crc <-  svy|>
+ind133_crc <- svy |>
   filter(LugNac == "En mismo cantón de residencia" | LugNac == "En otro cantón de residencia") |>
-  filter(CondAct == "Employed" | CondAct == "Unemployed") |>
-   group_by(CondAct)|>
-  summarize( p = survey_prop(vartype = "cv"))|>
-  filter(CondAct == "Unemployed")
+  filter(A5 > 14) |>
+  filter(CondAct == "Ocupado" | CondAct == "Desempleado abierto") |>
+  group_by(CondAct) |>
+  summarize(p = survey_prop(vartype = "cv")) |>
+  filter(CondAct == "Desempleado abierto")
 
 # 16.1. Proportion of PoC with secure tenure rights and/or property rights to housing and/or land [revised SDG indicator 1.4.2]
 # considering that the property is owned (partially o totally paid) o rented.
@@ -395,63 +405,79 @@ ind133_crc <-  svy|>
 
 # Nicaraguans
 
-ind161_nic <-  svy|>
+ind161_nic <- svy |>
   filter(LugNac == "En Nicaragua") |>
   group_by(secure_tenure) |>
-  summarize( p = survey_prop(vartype = "cv"))|>
-filter(secure_tenure == "Yes")
+  summarize(p = survey_prop(vartype = "cv")) |>
+  filter(secure_tenure == "Yes")
 
 # Costaricains
 
-ind161_crc <-  svy|>
+ind161_crc <- svy |>
   filter(LugNac == "En mismo cantón de residencia" | LugNac == "En otro cantón de residencia") |>
   group_by(secure_tenure) |>
-  summarize( p = survey_prop(vartype = "cv"))|>
-filter(secure_tenure == "Yes")
+  summarize(p = survey_prop(vartype = "cv")) |>
+  filter(secure_tenure == "Yes")
 
 
 # and now the graph
 
-pop <- c("Costa Ricans", "Nicaraguans","Costa Ricans", "Nicaraguans","Costa Ricans", "Nicaraguans")
-ind <- c("rbm8.1","rbm8.1","rbm13.3","rbm13.3","rbm16.1","rbm16.1")
-p <- c(ind81_crc$p,ind81_nic$p,ind133_crc$p,ind133_nic$p,ind161_crc$p,ind161_nic$p)
-p_cv <- c(ind81_crc$p_cv,ind81_nic$p_cv,ind133_crc$p_cv,ind133_nic$p_cv,ind161_crc$p_cv,ind161_nic$p_cv)
+pop <- c("Costa Ricans", "Nicaraguans", "Costa Ricans", "Nicaraguans", "Costa Ricans", "Nicaraguans")
+ind <- c("rbm8.1", "rbm8.1", "rbm13.3", "rbm13.3", "rbm16.1", "rbm16.1")
+p <- c(ind81_crc$p, ind81_nic$p, ind133_crc$p, ind133_nic$p, ind161_crc$p, ind161_nic$p)
+p_cv <- c(ind81_crc$p_cv, ind81_nic$p_cv, ind133_crc$p_cv, ind133_nic$p_cv, ind161_crc$p_cv, ind161_nic$p_cv)
 
-indicators <- tibble(pop,ind,p,p_cv)%>%
+indicators <- tibble(pop, ind, p, p_cv) %>%
   mutate(ind = as.factor(ind), pop = as.factor(pop))
 
 
-rbm_indicators <- 
-  c(rbm8.1 = "8.2 Proportion of PoC with primary reliance on clean (cooking) fuels and technology [SDG 7.1.2 Tier 1]",
-     rbm16.1 ="16.1. Proportion of PoC with secure tenure rights and/or property rights to housing and/or land [revised SDG indicator 1.4.2]",
-    rbm13.3= "13.3 Proportion of PoC (working age) who are unemployed."
-   )
+rbm_indicators <-
+  c(
+    rbm8.1 = "8.2 Proportion of PoC with primary reliance on clean (cooking) fuels and technology [SDG 7.1.2 Tier 1]",
+    rbm16.1 = "16.1. Proportion of PoC with secure tenure rights and/or property rights to housing and/or land [revised SDG indicator 1.4.2]",
+    rbm13.3 = "13.3 Proportion of PoC (working age) who are unemployed."
+  )
 
-ggplot(data=indicators, 
-       aes( x = p,
-            y = ind, color = pop))+
-  geom_point()+
-  geom_errorbar(aes(xmin = p - p_cv, xmax = p + p_cv), width = 0.2)+
-  geom_text(aes(label= scales::label_percent(.1)(p)),
-            vjust= ifelse((indicators$pop == "Nicaraguans"),-1.25, 2))+
-  scale_x_continuous(labels= scales::label_percent(),
-                     limits = c(0,1),
-                     breaks = c(0,.5,1))+
-  scale_color_manual(values = c("#666666",
-                                "#0072BC"))+
-  scale_y_discrete(labels = str_wrap(rev(rbm_indicators), 40))+
-  labs(x = "Estimate", y = "",
-       title = "Outcome Indicators:",
-       caption = glue::glue("Encuesta Nacional de Hogares (ENAHO) 2021\n",
-                            "# of Nicaraguans = 2,229)")) +
-     unhcrthemes::theme_unhcr(font_size = 15) +
-  theme(panel.grid.minor.x = element_blank())  -> p
+ggplot(
+  data = indicators,
+  aes(
+    x = p,
+    y = ind,
+    color = pop
+  )
+) +
+  geom_point() +
+  geom_errorbar(aes(xmin = p - p_cv, xmax = p + p_cv), width = 0.2) +
+  geom_text(
+    aes(label = scales::label_percent(.1)(p)),
+    vjust = ifelse((indicators$pop == "Nicaraguans"), -1.25, 2)
+  ) +
+  scale_x_continuous(
+    labels = scales::label_percent(),
+    limits = c(0, 1),
+    breaks = c(0, .5, 1)
+  ) +
+  scale_color_manual(values = c(
+    "#666666",
+    "#0072BC"
+  )) +
+  scale_y_discrete(labels = str_wrap(rev(rbm_indicators), 40)) +
+  labs(
+    x = "Estimate",
+    y = "",
+    title = "Outcome Indicators:",
+    caption = glue::glue(
+      "Encuesta Nacional de Hogares (ENAHO) 2021\n",
+      "# of Nicaraguans = 2,229)"
+    )
+  ) +
+  unhcrthemes::theme_unhcr(font_size = 15) +
+  theme(panel.grid.minor.x = element_blank()) -> p
 
 
 # turn off the automatic use of showtext functionality, so that the dml function can works properly
-showtext::showtext_auto(FALSE) 
-rvg::dml(ggobj = p, fonts = list(serif = 'Lato'))
-
+showtext::showtext_auto(FALSE)
+rvg::dml(ggobj = p, fonts = list(serif = "Lato"))
 ```
 
 
